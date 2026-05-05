@@ -1,0 +1,17 @@
+# Secrets — không bao giờ commit
+.env
+
+# Config & Data
+config.json
+chat_history.json
+
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
