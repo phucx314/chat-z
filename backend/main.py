@@ -28,8 +28,8 @@ app.include_router(chat.router)
 def health():
     return {"status": "ok"}
 
-@app.get("/ping")
-def ping():
+@app.get("/wakeup")
+def wakeup():
     return {"status": "alive"}
 
 if __name__ == "__main__":
