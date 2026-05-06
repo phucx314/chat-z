@@ -16,6 +16,7 @@ interface ChatState {
   sending: boolean;
   loading: boolean;
   serverError: string | null;
+  sidebarOpen: boolean;
 }
 
 interface ChatActions {
@@ -28,6 +29,7 @@ interface ChatActions {
   deleteMessage: (idx: number) => Promise<void>;
   updateConfig: (data: Record<string, any>) => Promise<void>;
   refreshConvs: () => Promise<void>;
+  setSidebarOpen: (open: boolean) => void;
 }
 
 const ChatCtx = createContext<(ChatState & ChatActions) | null>(null);
@@ -43,6 +45,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fetchConvs = useCallback(async () => {
     if (!user) return [];
@@ -117,10 +120,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setConvs(fresh);
     setActiveId(conv.id);
     setMessages([]);
+    setSidebarOpen(false);
   }, []);
 
   const loadConv = useCallback(async (id: string) => {
     await loadConvById(id);
+    setSidebarOpen(false);
   }, [loadConvById]);
 
   const deleteConv = useCallback(async (id: string) => {
@@ -233,9 +238,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ChatCtx.Provider value={{
-      convs, activeId, messages, config, sending, loading, serverError,
+      convs, activeId, messages, config, sending, loading, serverError, sidebarOpen,
       newChat, loadConv, deleteConv, renameConv, updateAvatar,
-      sendMessage, deleteMessage, updateConfig, refreshConvs,
+      sendMessage, deleteMessage, updateConfig, refreshConvs, setSidebarOpen
     }}>
       {children}
     </ChatCtx.Provider>

@@ -6,7 +6,7 @@ import ConvItem from "./ConvItem";
 import SettingsModal from "./SettingsModal";
 
 export default function Sidebar() {
-  const { convs, newChat } = useChat();
+  const { convs, newChat, sidebarOpen, setSidebarOpen } = useChat();
   const { user, logout } = useAuth();
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -15,10 +15,29 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="w-[280px] min-w-[260px] bg-[#13151c] border-r border-[#1e2230] flex flex-col overflow-hidden">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside className={`
+        fixed inset-y-0 left-0 z-[60] w-[280px] bg-[#13151c] border-r border-[#1e2230] flex flex-col overflow-hidden transition-transform duration-300
+        md:relative md:translate-x-0
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}>
         {/* Title row */}
         <div className="flex items-center justify-between px-4 pt-5 pb-2">
-          <h1 className="text-[22px] font-extrabold text-[#e4e6f0]">Chats</h1>
+          <div className="flex items-center gap-2">
+             {/* Mobile close button */}
+            <button 
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden text-[#8b90a7] p-1 -ml-1"
+            >✕</button>
+            <h1 className="text-[22px] font-extrabold text-[#e4e6f0]">Chats</h1>
+          </div>
           <button
             onClick={newChat}
             title="New Chat"

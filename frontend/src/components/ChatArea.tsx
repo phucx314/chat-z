@@ -40,9 +40,9 @@ function MsgBubble({
       >
         {/* Avatar area (36px width to reserve space even if invisible) */}
         {!isUser && (
-          <div className="w-9 h-9 flex-shrink-0 self-end">
+          <div className="w-8 h-8 md:w-9 md:h-9 flex-shrink-0 self-end">
             {isLastInGroup && (
-              <div className="w-9 h-9 rounded-full bg-[#1e2533] border border-[#4f6ef7] border-[1.5px] flex items-center justify-center text-[#4f6ef7] text-sm font-bold">
+              <div className="w-full h-full rounded-full bg-[#1e2533] border border-[#4f6ef7] border-[1.5px] flex items-center justify-center text-[#4f6ef7] text-xs md:text-sm font-bold">
                 ✦
               </div>
             )}
@@ -51,7 +51,7 @@ function MsgBubble({
 
         {/* Bubble */}
         <div
-          className={`max-w-[520px] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap break-words
+          className={`max-w-[85%] md:max-w-[520px] px-3.5 py-2 md:px-4 md:py-2.5 text-[14px] md:text-[15px] leading-relaxed whitespace-pre-wrap break-words
             ${isUser ? "bg-[#4f6ef7] text-white" : "bg-[#1e2533] text-[#e4e6f0]"}
             ${radiusClass}
           `}
@@ -123,7 +123,7 @@ export default function ChatArea() {
   }, [messages, sending]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col scrollbar-thin scrollbar-thumb-[#1e2230]">
+    <div className="flex-1 overflow-y-auto px-3 md:px-5 py-3 md:py-5 flex flex-col scrollbar-thin scrollbar-thumb-[#1e2230]">
       {messages.length === 0 && !sending ? (
         <WelcomeScreen />
       ) : (

@@ -26,9 +26,9 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[2000]" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[2000] p-4" onClick={onClose}>
       <div
-        className="bg-[#13151c] border border-[#1e2230] rounded-2xl p-7 w-[440px] flex flex-col gap-4 shadow-2xl"
+        className="bg-[#13151c] border border-[#1e2230] rounded-2xl p-6 md:p-7 w-full max-w-[440px] flex flex-col gap-4 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <h2 className="text-lg font-extrabold text-[#e4e6f0]">Settings</h2>

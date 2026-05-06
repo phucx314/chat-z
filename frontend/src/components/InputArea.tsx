@@ -88,14 +88,15 @@ export default function InputArea() {
         <button
           onClick={handleSend}
           disabled={(sending && !config?.allow_interrupt) || !text.trim()}
-          className="w-11 h-11 rounded-full bg-[#4f6ef7] hover:bg-[#3d5ce5] disabled:bg-[#1e2330] disabled:text-[#545872] text-white text-lg flex items-center justify-center flex-shrink-0 transition-colors"
+          className="w-10 h-10 md:w-11 md:h-11 rounded-full bg-[#4f6ef7] hover:bg-[#3d5ce5] disabled:bg-[#1e2330] disabled:text-[#545872] text-white text-lg flex items-center justify-center flex-shrink-0 transition-colors"
         >➤</button>
       </div>
 
       {/* Hint */}
-      <p className="text-center text-[11px] text-[#545872] mt-1.5">
+      <p className="hidden md:block text-center text-[11px] text-[#545872] mt-1.5">
         Enter to send · Shift+Enter for new line
       </p>
+
 
       {/* Close model menu on outside click */}
       {showModelMenu && (

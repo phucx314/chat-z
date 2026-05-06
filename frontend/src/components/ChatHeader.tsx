@@ -2,16 +2,22 @@
 import { useChat } from "@/context/ChatContext";
 
 export default function ChatHeader() {
-  const { convs, activeId, config } = useChat();
+  const { convs, activeId, config, setSidebarOpen } = useChat();
   const conv = convs.find(c => c.id === activeId);
   const title = conv?.title || "AI Assistant";
   const provider = config?.provider?.split(" (")[0] || "";
   const model = config?.model || "";
 
   return (
-    <header className="flex items-center gap-4 px-5 h-[60px] bg-[#13151c] border-b border-[#1e2230] flex-shrink-0">
+    <header className="flex items-center gap-3 px-4 md:px-5 h-[60px] bg-[#13151c] border-b border-[#1e2230] flex-shrink-0">
+      {/* Mobile Hamburger */}
+      <button 
+        onClick={() => setSidebarOpen(true)}
+        className="md:hidden text-[#e4e6f0] p-1 -ml-1 text-2xl"
+      >☰</button>
+
       {/* Avatar */}
-      <div className="w-[42px] h-[42px] rounded-full bg-[#1e2533] border-[1.5px] border-[#4f6ef7] flex items-center justify-center text-[#4f6ef7] text-xl font-bold flex-shrink-0">
+      <div className="w-[38px] h-[38px] md:w-[42px] md:h-[42px] rounded-full bg-[#1e2533] border-[1.5px] border-[#4f6ef7] flex items-center justify-center text-[#4f6ef7] text-lg md:text-xl font-bold flex-shrink-0">
         ✦
       </div>
 
