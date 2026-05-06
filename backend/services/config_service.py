@@ -23,20 +23,24 @@ def load_config(user_id: str) -> dict:
 
     if os.getenv("PROVIDER"):
         provider = os.getenv("PROVIDER")
-    elif dedicated_key and not openai_key:
+    elif dedicated_key: # Prioritize MiMo Token Plan
         provider = "MiMo (Token Plan — SG)"
         cfg["base_url"] = PROVIDERS["MiMo (Token Plan — SG)"]["base_url"]
         if not cfg.get("model") or cfg.get("model", "").startswith("gpt-"):
             cfg["model"] = "mimo-v2.5-pro"
-    elif mimo_key and not openai_key:
+    elif mimo_key: # Then MiMo Pay-As-You-Go
         provider = "MiMo (Pay-As-You-Go)"
         cfg["base_url"] = PROVIDERS["MiMo (Pay-As-You-Go)"]["base_url"]
         if not cfg.get("model") or cfg.get("model", "").startswith("gpt-"):
             cfg["model"] = "mimo-v2.5-pro"
-    elif openai_key and not mimo_key:
+    elif openai_key: # Finally OpenAI
         provider = "OpenAI"
+        cfg["base_url"] = PROVIDERS["OpenAI"]["base_url"]
+        if not cfg.get("model") or not cfg.get("model", "").startswith("gpt-"):
+            cfg["model"] = "gpt-4o-mini"
     else:
         provider = cfg.get("provider", "OpenAI")
+
 
     if "Token Plan" in provider:
         env_key = dedicated_key or mimo_key or openai_key

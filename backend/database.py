@@ -23,7 +23,8 @@ engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, text
+from pgvector.sqlalchemy import Vector
 
 class UserModel(Base):
     __tablename__ = "users"
@@ -44,6 +45,16 @@ class ConversationModel(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
 
+class MessageVectorModel(Base):
+    __tablename__ = "message_vectors"
+
+    id = Column(String, primary_key=True, index=True)
+    conv_id = Column(String, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    embedding = Column(Vector(1536), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 class ConfigModel(Base):
     __tablename__ = "app_config"
     
@@ -55,6 +66,11 @@ def init_db():
     # Make sure the data directory exists if using sqlite
     if is_sqlite:
         os.makedirs(os.path.dirname(DATABASE_URL.replace("sqlite:///", "")), exist_ok=True)
+    else:
+        with engine.connect() as conn:
+            conn.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
+            conn.commit()
+
     Base.metadata.create_all(bind=engine)
 
 def get_db():

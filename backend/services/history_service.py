@@ -81,3 +81,31 @@ def delete_message(conv_id: str, user_id: str, message_index: int) -> list | Non
                 db.refresh(c)
                 return c.messages
     return None
+
+def save_message_vector(conv_id: str, role: str, content: str, embedding: list[float]):
+    from backend.database import MessageVectorModel
+    with SessionLocal() as db:
+        msg = MessageVectorModel(
+            id=str(uuid.uuid4()),
+            conv_id=conv_id,
+            role=role,
+            content=content,
+            embedding=embedding
+        )
+        db.add(msg)
+        db.commit()
+
+def search_similar_messages(conv_id: str, query_embedding: list[float], limit: int = 5) -> list[dict]:
+    from backend.database import MessageVectorModel
+    with SessionLocal() as db:
+        # Use cosine distance for similarity search (1 - cosine_similarity)
+        # We want to order by smallest distance first.
+        # We only search within the same conv_id
+        results = db.query(MessageVectorModel).filter(MessageVectorModel.conv_id == conv_id).order_by(
+            MessageVectorModel.embedding.cosine_distance(query_embedding)
+        ).limit(limit).all()
+        
+        # We sort them by created_at so they appear chronologically in the prompt context
+        sorted_results = sorted(results, key=lambda x: x.created_at)
+        
+        return [{"role": r.role, "content": r.content} for r in sorted_results]
