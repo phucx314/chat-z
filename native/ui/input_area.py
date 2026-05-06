@@ -4,7 +4,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QPoint
 from PyQt6.QtGui import QAction
-from core.config import PROVIDERS
 
 
 class ChatInputArea(QWidget):
@@ -71,7 +70,8 @@ class ChatInputArea(QWidget):
 
     def _show_model_menu(self):
         provider = self.config_data.get("provider", "OpenAI")
-        models   = PROVIDERS.get(provider, {}).get("models", [])
+        providers = self.config_data.get("providers", {})
+        models = providers.get(provider, {}).get("models", [])
         if not models:
             return
         menu = QMenu(self)

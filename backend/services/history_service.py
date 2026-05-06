@@ -3,7 +3,7 @@ import json
 import uuid
 from datetime import datetime
 
-HISTORY_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "history.json")
+HISTORY_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "history.json")
 
 AVATAR_COLORS = [
     "#4f6ef7", "#e05678", "#25a56a", "#f07d3e",

@@ -2,8 +2,8 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fastapi import APIRouter, HTTPException
-from server.models import CreateConvRequest, RenameConvRequest, UpdateAvatarRequest
-import core.history as history
+from backend.models import CreateConvRequest, RenameConvRequest, UpdateAvatarRequest
+import backend.services.history_service as history
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 

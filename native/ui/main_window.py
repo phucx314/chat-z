@@ -10,33 +10,26 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QBrush, QPen, QPixmap
 import httpx
 
-from core.llm_client import LLMWorker, SERVER_URL
-from ui.sidebar import Sidebar
-from ui.chat_area import ChatArea
-from ui.input_area import ChatInputArea
-from ui.settings_dialog import SettingsDialog
-from ui.styles import BG_CHAT, BG_HEADER, TEXT_PRIMARY, TEXT_MUTED, ACCENT, BORDER, SUCCESS
-
-import core.history as history
+from native.api_client import LLMWorker, APIClient, SERVER_URL
+from native.ui.sidebar import Sidebar
+from native.ui.chat_area import ChatArea
+from native.ui.input_area import ChatInputArea
+from native.ui.settings_dialog import SettingsDialog
+from native.ui.styles import BG_CHAT, BG_HEADER, TEXT_PRIMARY, TEXT_MUTED, ACCENT, BORDER, SUCCESS
 
 
 class ConfigLoader(QThread):
     done = pyqtSignal(dict)
     def run(self):
-        try:
-            with httpx.Client(timeout=5) as c:
-                res = c.get(f"{SERVER_URL}/config")
-            self.done.emit(res.json() if res.status_code == 200 else {})
-        except Exception:
-            self.done.emit({})
+        cfg = APIClient.get_config()
+        self.done.emit(cfg)
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         # local config for UI defaults
-        from core.config import load_config
-        self.config_data  = load_config()
+        self.config_data  = APIClient.get_config()
         self.current_conv_id: str | None = None
 
         self.setWindowTitle("AI Chat")
@@ -132,20 +125,17 @@ class MainWindow(QMainWindow):
 
     # ── Startup ───────────────────────────────────────────────────────────────
     def _startup_load(self):
-        all_convs = history.get_all_conversations()
-        for c in all_convs:
-            if not c.get("messages") and c.get("title") == "New Chat":
-                history.delete_conversation(c["id"])
-
-        convs = history.get_all_conversations()
+        convs = APIClient.list_conversations()
         if convs:
+            # Cleanup empty chats (optional, but let's keep it simple for client)
             self._load_conversation(convs[0]["id"])
         else:
             self._new_chat()
 
     # ── Conversation management ───────────────────────────────────────────────
     def _new_chat(self):
-        conv = history.create_conversation()
+        conv = APIClient.create_conversation()
+        if not conv: return
         self.current_conv_id = conv["id"]
         self.displayed_messages = []
         self.chat_area.clear_chat()
@@ -154,7 +144,7 @@ class MainWindow(QMainWindow):
         self.input_area.focus_input()
 
     def _load_conversation(self, conv_id: str):
-        conv = history.get_conversation(conv_id)
+        conv = APIClient.get_conversation(conv_id)
         if not conv:
             return
         self.current_conv_id = conv_id
@@ -168,30 +158,19 @@ class MainWindow(QMainWindow):
         dlg = SettingsDialog(self.config_data, self)
         if dlg.exec():
             saved = dlg.get_config()
-            from core.config import load_config, save_config
-            fresh = load_config()
-            fresh["api_key"]  = saved.get("api_key", "")
-            fresh["provider"] = saved.get("provider", fresh["provider"])
-            fresh["base_url"] = saved.get("base_url", fresh["base_url"])
-            fresh["allow_interrupt"] = saved.get("allow_interrupt", fresh.get("allow_interrupt", False))
-            save_config(fresh)
-            self.config_data = fresh
-
             # Push to server
-            try:
-                with httpx.Client(timeout=5) as c:
-                    c.patch(f"{SERVER_URL}/config", json={
-                        "provider": fresh["provider"],
-                        "base_url": fresh["base_url"],
-                        "api_key":  fresh.get("api_key", ""),
-                        "model":    fresh.get("model", ""),
-                        "allow_interrupt": fresh.get("allow_interrupt", False),
-                    })
-            except Exception:
-                pass  # server may not be running
-
-            self.input_area.update_config(self.config_data)
-            self._refresh_header_model()
+            success = APIClient.update_config({
+                "provider": saved.get("provider"),
+                "base_url": saved.get("base_url"),
+                "api_key":  saved.get("api_key", ""),
+                "model":    saved.get("model", ""),
+                "allow_interrupt": saved.get("allow_interrupt", False),
+            })
+            
+            if success:
+                self.config_data = APIClient.get_config()
+                self.input_area.update_config(self.config_data)
+                self._refresh_header_model()
 
     # ── Send ──────────────────────────────────────────────────────────────────
     def _on_send(self, text: str):
@@ -203,11 +182,11 @@ class MainWindow(QMainWindow):
             return
 
         # First message? update header title
-        conv = history.get_conversation(self.current_conv_id)
+        conv = APIClient.get_conversation(self.current_conv_id)
         if conv and not conv.get("messages"):
             title = text[:40] + ("…" if len(text) > 40 else "")
             self.header_title.setText(title)
-            history.rename_conversation(self.current_conv_id, title)
+            APIClient.rename_conversation(self.current_conv_id, title)
             self.sidebar.update_conv_title(self.current_conv_id, title)
 
         self.displayed_messages.append({"role": "user", "content": text})
@@ -260,7 +239,7 @@ class MainWindow(QMainWindow):
             self.input_area.set_enabled(True)
             self.input_area.focus_input()
 
-            conv = history.get_conversation(self.current_conv_id)
+            conv = APIClient.get_conversation(self.current_conv_id)
             if conv:
                 self.sidebar.update_conv_title(self.current_conv_id, conv.get("title", "New Chat"))
             self.sidebar.refresh(select_id=self.current_conv_id)

@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QColor, QPainter, QBrush, QPen, QPixmap
 from datetime import datetime
-from ui.styles import (
+from native.ui.styles import (
     BG_CHAT, BG_BUBBLE_USER, BG_BUBBLE_BOT,
     TEXT_WHITE, TEXT_PRIMARY, TEXT_MUTED, TEXT_SECONDARY,
     ACCENT, ACCENT2, BORDER, BG_ACTIVE

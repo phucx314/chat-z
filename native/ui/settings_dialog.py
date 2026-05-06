@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QComboBox, QPushButton, QHBoxLayout, QFrame
 )
 from PyQt6.QtCore import Qt
-from core.config import PROVIDERS, save_config
+
 
 
 class SettingsDialog(QDialog):
@@ -19,6 +19,8 @@ class SettingsDialog(QDialog):
         root.setContentsMargins(28, 28, 28, 24)
         root.setSpacing(20)
 
+        providers = self.config_data.get("providers", {})
+
         # Title
         title = QLabel("Settings")
         title.setStyleSheet("font-size: 20px; font-weight: 700; color: #e4e6eb;")
@@ -32,7 +34,7 @@ class SettingsDialog(QDialog):
         # Provider
         root.addWidget(self._section_label("Provider"))
         self.provider_cb = QComboBox()
-        self.provider_cb.addItems(list(PROVIDERS.keys()))
+        self.provider_cb.addItems(list(providers.keys()))
         self.provider_cb.setCurrentText(self.config_data.get("provider", "OpenAI"))
         self.provider_cb.currentTextChanged.connect(self._on_provider_changed)
         root.addWidget(self.provider_cb)
@@ -57,7 +59,7 @@ class SettingsDialog(QDialog):
         self.base_input = QLineEdit()
         self.base_input.setText(
             self.config_data.get("base_url") or
-            PROVIDERS.get(self.config_data.get("provider", "OpenAI"), {}).get("base_url", "")
+            providers.get(self.config_data.get("provider", "OpenAI"), {}).get("base_url", "")
         )
         root.addWidget(self.base_input)
 
@@ -93,7 +95,8 @@ class SettingsDialog(QDialog):
         return lbl
 
     def _on_provider_changed(self, provider: str):
-        preset = PROVIDERS.get(provider, {})
+        providers = self.config_data.get("providers", {})
+        preset = providers.get(provider, {})
         self.base_input.setText(preset.get("base_url", ""))
 
     def _save(self):
@@ -101,7 +104,6 @@ class SettingsDialog(QDialog):
         self.config_data["api_key"]  = self.api_input.text().strip()  # manually entered only
         self.config_data["base_url"] = self.base_input.text().strip()
         self.config_data["allow_interrupt"] = self.interrupt_cb.isChecked()
-        save_config(self.config_data)
         self.accept()
 
     def get_config(self) -> dict:

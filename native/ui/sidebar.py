@@ -5,8 +5,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont, QColor, QPainter, QBrush, QPen, QPixmap
 from datetime import datetime
-import core.history as history
-from ui.styles import (
+from native.api_client import APIClient
+from native.ui.styles import (
     BG_ACTIVE, BG_SIDEBAR_HOV, TEXT_PRIMARY, TEXT_SECONDARY,
     TEXT_MUTED, ACCENT, BORDER, SUCCESS
 )
@@ -208,7 +208,7 @@ class Sidebar(QWidget):
                 item.widget().deleteLater()
         self._items.clear()
 
-        convs = history.get_all_conversations()
+        convs = APIClient.list_conversations()
         active = select_id or self._active_id
 
         for i, conv in enumerate(convs):
@@ -234,7 +234,7 @@ class Sidebar(QWidget):
         self.conv_selected.emit(conv_id)
 
     def _on_item_deleted(self, conv_id: str):
-        history.delete_conversation(conv_id)
+        APIClient.delete_conversation(conv_id)
         was_active = (conv_id == self._active_id)
         self._active_id = None
         self.refresh()

@@ -1,7 +1,9 @@
-import sys
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from PyQt6.QtWidgets import QApplication
-from ui.main_window import MainWindow
-from ui.styles import GLOBAL_STYLE
+from native.ui.main_window import MainWindow
+from native.ui.styles import GLOBAL_STYLE
 
 def main():
     app = QApplication(sys.argv)

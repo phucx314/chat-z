@@ -2,10 +2,11 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
-from server.models import SendMessageRequest
-from core.config import load_config, get_effective_api_key, SYSTEM_PROMPT, save_config, PROVIDERS
-from core.history import get_conversation, update_conversation
+from backend.models import SendMessageRequest
+from backend.services.config_service import load_config, get_effective_api_key, save_config
+from backend.services.history_service import get_conversation, update_conversation
+from ai.prompts import SYSTEM_PROMPT
+from ai.models import PROVIDERS
 from openai import OpenAI
 import json
 
@@ -14,10 +15,8 @@ router = APIRouter(tags=["chat"])
 # In-memory config cache (loaded once, updated via /config endpoints)
 _cfg = load_config()
 
-
 def get_cfg():
     return _cfg
-
 
 @router.get("/config")
 def get_config():
@@ -33,7 +32,6 @@ def get_config():
                           for k, v in PROVIDERS.items()},
     }
 
-
 @router.patch("/config")
 def update_config(body: dict):
     global _cfg
@@ -48,7 +46,6 @@ def update_config(body: dict):
     if "allow_interrupt" in body: _cfg["allow_interrupt"] = body["allow_interrupt"]
     save_config(_cfg)
     return {"ok": True}
-
 
 @router.post("/chat/send")
 def send_message(body: SendMessageRequest):
@@ -69,17 +66,16 @@ def send_message(body: SendMessageRequest):
 
     messages.append({"role": "user", "content": body.message})
 
+    # Giới hạn số lượng tin nhắn gửi đi (Sliding Window) để tiết kiệm token
+    MAX_HISTORY = 20
+    context_messages = messages[-MAX_HISTORY:] if len(messages) > MAX_HISTORY else messages
+
     model    = body.model or cfg.get("model", "gpt-4o-mini")
     base_url = cfg.get("base_url", "").strip() or None
 
     try:
-        client = OpenAI(api_key=api_key, base_url=base_url)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
-            temperature=0.8,
-        )
-        reply = response.choices[0].message.content
+        from ai.engine import generate_reply
+        reply = generate_reply(context_messages, model, api_key, base_url)
     except Exception as e:
         raise HTTPException(502, str(e))
 

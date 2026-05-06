@@ -2,8 +2,10 @@
 .env
 
 # Config & Data
-config.json
-chat_history.json
+data/
+node_modules/
+frontend/node_modules/
+frontend/.next/
 
 # OS
 .DS_Store
