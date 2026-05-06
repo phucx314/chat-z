@@ -23,23 +23,32 @@ engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+from sqlalchemy import Column, String, DateTime, ForeignKey
+
+class UserModel(Base):
+    __tablename__ = "users"
+    
+    id = Column(String, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 class ConversationModel(Base):
     __tablename__ = "conversations"
 
     id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, default="New Chat")
     avatar_color = Column(String, default="#4f6ef7")
     messages = Column(JSON, default=list)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
-    
-    # We will add pgvector Vector column later when implementing semantic search
-    # embedding = Column(Vector(384)) # e.g. for all-MiniLM-L6-v2
 
 class ConfigModel(Base):
     __tablename__ = "app_config"
     
-    key = Column(String, primary_key=True)
+    # key is now user_id
+    key = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     value = Column(JSON)
 
 def init_db():

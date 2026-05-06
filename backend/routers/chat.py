@@ -1,26 +1,20 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from backend.models import SendMessageRequest
 from backend.services.config_service import load_config, get_effective_api_key, save_config
 from backend.services.history_service import get_conversation, update_conversation
-from ai.prompts import SYSTEM_PROMPT
+from backend.services.auth_service import get_current_user
+from backend.database import UserModel
 from ai.models import PROVIDERS
-from openai import OpenAI
 import json
 
 router = APIRouter(tags=["chat"])
 
-# In-memory config cache (loaded once, updated via /config endpoints)
-_cfg = load_config()
-
-def get_cfg():
-    return _cfg
-
 @router.get("/config")
-def get_config():
-    cfg = get_cfg()
+def get_config(user: UserModel = Depends(get_current_user)):
+    cfg = load_config(user.id)
     return {
         "provider":      cfg.get("provider", "OpenAI"),
         "model":         cfg.get("model", "gpt-4o-mini"),
@@ -33,29 +27,28 @@ def get_config():
     }
 
 @router.patch("/config")
-def update_config(body: dict):
-    global _cfg
+def update_config(body: dict, user: UserModel = Depends(get_current_user)):
+    cfg = load_config(user.id)
     if "provider" in body:
-        _cfg["provider"] = body["provider"]
+        cfg["provider"] = body["provider"]
         preset = PROVIDERS.get(body["provider"], {})
         if preset:
-            _cfg["base_url"] = preset["base_url"]
-    if "model"    in body: _cfg["model"]    = body["model"]
-    if "base_url" in body: _cfg["base_url"] = body["base_url"]
-    if "api_key"  in body: _cfg["api_key"]  = body["api_key"]
-    if "allow_interrupt" in body: _cfg["allow_interrupt"] = body["allow_interrupt"]
-    save_config(_cfg)
+            cfg["base_url"] = preset["base_url"]
+    if "model"    in body: cfg["model"]    = body["model"]
+    if "base_url" in body: cfg["base_url"] = body["base_url"]
+    if "api_key"  in body: cfg["api_key"]  = body["api_key"]
+    if "allow_interrupt" in body: cfg["allow_interrupt"] = body["allow_interrupt"]
+    save_config(user.id, cfg)
     return {"ok": True}
 
 @router.post("/chat/send")
-def send_message(body: SendMessageRequest):
-    global _cfg
-    cfg = get_cfg()
+def send_message(body: SendMessageRequest, user: UserModel = Depends(get_current_user)):
+    cfg = load_config(user.id)
     api_key = get_effective_api_key(cfg)
     if not api_key:
         raise HTTPException(401, "No API key configured")
 
-    conv = get_conversation(body.conv_id)
+    conv = get_conversation(body.conv_id, user.id)
     if not conv:
         raise HTTPException(404, "Conversation not found")
 
@@ -90,7 +83,7 @@ def send_message(body: SendMessageRequest):
     for r in replies:
         messages.append({"role": "assistant", "content": r})
     
-    update_conversation(body.conv_id, messages)
+    update_conversation(body.conv_id, user.id, messages)
 
     return {
         "replies":  replies,

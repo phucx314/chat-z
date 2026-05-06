@@ -32,7 +32,10 @@ interface ChatActions {
 
 const ChatCtx = createContext<(ChatState & ChatActions) | null>(null);
 
+import { useAuth } from "./AuthContext";
+
 export function ChatProvider({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,10 +45,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [serverError, setServerError] = useState<string | null>(null);
 
   const fetchConvs = useCallback(async () => {
+    if (!user) return [];
     const cs = await api.getConversations();
     setConvs(cs);
     return cs;
-  }, []);
+  }, [user]);
 
   const loadConvById = useCallback(async (id: string) => {
     const conv = await api.getConversation(id);
@@ -56,6 +60,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   // ── Boot ──────────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+        setConvs([]);
+        setMessages([]);
+        setActiveId(null);
+        setConfig(null);
+        setLoading(false);
+        return;
+    }
+
     (async () => {
       setLoading(true);
       try {
@@ -84,7 +98,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     })();
-  }, [loadConvById]);
+  }, [loadConvById, user, authLoading]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
   const refreshConvs = useCallback(async () => {

@@ -1,12 +1,34 @@
 "use client";
 import { useChat } from "@/context/ChatContext";
+import { useAuth } from "@/context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import ChatHeader from "@/components/ChatHeader";
 import ChatArea from "@/components/ChatArea";
 import InputArea from "@/components/InputArea";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const { loading, serverError } = useChat();
+  const { loading: chatLoading, serverError } = useChat();
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading || (!user && !authLoading)) {
+    return (
+      <main className="flex h-screen items-center justify-center bg-[#0e1117]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-full border-2 border-[#4f6ef7] border-t-transparent animate-spin" />
+          <p className="text-[#8b90a7] text-sm">Authenticating…</p>
+        </div>
+      </main>
+    );
+  }
 
   if (serverError) {
     return (
@@ -35,7 +57,7 @@ export default function Home() {
     );
   }
 
-  if (loading) {
+  if (chatLoading) {
     return (
       <main className="flex h-screen items-center justify-center bg-[#0e1117]">
         <div className="flex flex-col items-center gap-3">

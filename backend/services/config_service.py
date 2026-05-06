@@ -7,10 +7,10 @@ ENV_FILE    = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__fil
 
 load_dotenv(ENV_FILE, override=False)
 
-def load_config() -> dict:
+def load_config(user_id: str) -> dict:
     cfg = {}
     with SessionLocal() as db:
-        c = db.query(ConfigModel).filter(ConfigModel.key == "main").first()
+        c = db.query(ConfigModel).filter(ConfigModel.key == user_id).first()
         if c and c.value:
             cfg = dict(c.value)
         else:
@@ -59,7 +59,7 @@ def load_config() -> dict:
 def get_effective_api_key(cfg: dict) -> str:
     return cfg.get("_env_api_key") or cfg.get("api_key", "")
 
-def save_config(cfg: dict):
+def save_config(user_id: str, cfg: dict):
     to_save = {
         "provider": cfg.get("provider", "OpenAI"),
         "base_url": cfg.get("base_url", ""),
@@ -68,9 +68,9 @@ def save_config(cfg: dict):
         "allow_interrupt": cfg.get("allow_interrupt", False),
     }
     with SessionLocal() as db:
-        c = db.query(ConfigModel).filter(ConfigModel.key == "main").first()
+        c = db.query(ConfigModel).filter(ConfigModel.key == user_id).first()
         if c:
             c.value = to_save
         else:
-            db.add(ConfigModel(key="main", value=to_save))
+            db.add(ConfigModel(key=user_id, value=to_save))
         db.commit()

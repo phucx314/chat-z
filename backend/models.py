@@ -30,3 +30,13 @@ class UpdateConfigRequest(BaseModel):
     model: Optional[str]    = None
     base_url: Optional[str] = None
     api_key: Optional[str]  = None
+
+from pydantic import BaseModel, Field
+
+class UserCreate(BaseModel):
+    username: str = Field(..., min_length=5, max_length=20, pattern="^[a-zA-Z0-9_]+$")
+    password: str = Field(..., min_length=8)
+
+class UserLogin(BaseModel):
+    username: str
+    password: str

@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useChat } from "@/context/ChatContext";
+import { useAuth } from "@/context/AuthContext";
 import ConvItem from "./ConvItem";
 import SettingsModal from "./SettingsModal";
 
 export default function Sidebar() {
   const { convs, newChat } = useChat();
+  const { user, logout } = useAuth();
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
 
@@ -46,11 +48,25 @@ export default function Sidebar() {
         </div>
 
         {/* Bottom settings */}
-        <div className="border-t border-[#1e2230] p-2">
+        <div className="border-t border-[#1e2230] p-2 flex flex-col gap-1">
+          {user && (
+            <div className="px-4 py-2 flex items-center justify-between">
+              <span className="text-sm font-bold text-[#e4e6f0] truncate">@{user.username}</span>
+              <button 
+                onClick={logout}
+                title="Sign Out"
+                className="text-xs text-[#e05678] hover:underline"
+              >
+                Logout
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setShowSettings(true)}
-            className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-[#8b90a7] hover:bg-[#1e2230] hover:text-[#e4e6f0] transition-colors"
-          >⚙  Settings</button>
+            className="w-full text-left px-4 py-2.5 rounded-xl text-sm text-[#8b90a7] hover:bg-[#1e2230] hover:text-[#e4e6f0] transition-colors flex items-center gap-2"
+          >
+            ⚙  Settings
+          </button>
         </div>
       </aside>
 
