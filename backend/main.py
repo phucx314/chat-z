@@ -13,17 +13,23 @@ app = FastAPI(title="Chat-Z Backend")
 def on_startup():
     init_db()
 
-# Cấu hình CORS để cho phép Frontend ở domain khác gọi vào và gửi kèm Cookie
+# Cấu hình CORS
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://chat-z-client.pages.dev",
+]
+
+# Thêm FRONTEND_URL từ environment variable nếu có
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://chat-z-client.pages.dev",
-        # Allow all origins dynamically using a regex if necessary, but allow_credentials requires exact origins or regex.
-        # For simplicity since Vercel/Pages often have random subdomains during preview:
-        "*" if not os.getenv("RENDER") else "https://chat-z-client.pages.dev"
-    ] if os.getenv("RENDER") else ["http://localhost:3000", "https://chat-z-client.pages.dev"],
-    allow_origin_regex=r"https://chat-z-client.*\.pages\.dev", # Match any preview URL
+    allow_origins=origins,
+    # Cho phép các subdomain của Cloudflare Pages (cả http và https)
+    allow_origin_regex=r"https?://chat-z-client.*\.pages\.dev",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
