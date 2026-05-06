@@ -28,8 +28,8 @@ if frontend_url:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    # Cho phép các subdomain của Cloudflare Pages (cả http và https)
-    allow_origin_regex=r"https?://chat-z-client.*\.pages\.dev",
+    # Hỗ trợ tự động TẤT CẢ các link preview sinh ra sau mỗi lần deploy FE (ví dụ: https://c8b24d1d.chat-z-client.pages.dev)
+    allow_origin_regex=r"https?://(?:.*\.)?chat-z-client\.pages\.dev",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
