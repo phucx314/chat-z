@@ -69,7 +69,7 @@ export default function LoginPage() {
   if (loading || user) return null; // Wait for redirect or loading
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#0e1117]">
+    <div className="flex items-center justify-center min-h-[100dvh] bg-[#0e1117]">
       <form onSubmit={handleRealSubmit} className="bg-[#13151c] border border-[#1e2230] rounded-2xl p-8 w-full max-w-md shadow-2xl flex flex-col gap-6">
         <div className="text-center">
           <h1 className="text-2xl font-extrabold text-[#e4e6f0]">Welcome Back</h1>

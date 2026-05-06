@@ -21,7 +21,7 @@ export default function Home() {
 
   if (authLoading || (!user && !authLoading)) {
     return (
-      <main className="flex h-screen items-center justify-center bg-[#0e1117]">
+      <main className="flex h-[100dvh] items-center justify-center bg-[#0e1117]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-full border-2 border-[#4f6ef7] border-t-transparent animate-spin" />
           <p className="text-[#8b90a7] text-sm">Authenticating…</p>
@@ -32,7 +32,7 @@ export default function Home() {
 
   if (serverError) {
     return (
-      <main className="flex h-screen items-center justify-center bg-[#0e1117]">
+      <main className="flex h-[100dvh] items-center justify-center bg-[#0e1117]">
         <div className="flex flex-col items-center gap-4 max-w-md text-center px-6">
           <div className="w-16 h-16 rounded-full bg-[#2a1a1a] border border-red-500/40 flex items-center justify-center text-3xl">⚠</div>
           <h2 className="text-xl font-bold text-red-400">Cannot Connect to Server</h2>
@@ -59,7 +59,7 @@ export default function Home() {
 
   if (chatLoading) {
     return (
-      <main className="flex h-screen items-center justify-center bg-[#0e1117]">
+      <main className="flex h-[100dvh] items-center justify-center bg-[#0e1117]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-full border-2 border-[#4f6ef7] border-t-transparent animate-spin" />
           <p className="text-[#8b90a7] text-sm">Connecting to server…</p>
@@ -69,7 +69,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex h-screen overflow-hidden">
+    <main className="flex h-[100dvh] overflow-hidden">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden bg-[#0e1117]">
         <ChatHeader />
