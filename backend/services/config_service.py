@@ -1,20 +1,21 @@
 import os
-import json
 from dotenv import load_dotenv
 from ai.models import PROVIDERS
+from backend.database import SessionLocal, ConfigModel
 
-CONFIG_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "config.json")
 ENV_FILE    = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
 
 load_dotenv(ENV_FILE, override=False)
 
 def load_config() -> dict:
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
-            cfg = json.load(f)
-    else:
-        cfg = {"provider": "OpenAI", "base_url": "https://api.openai.com/v1",
-               "model": "gpt-4o-mini", "api_key": "", "allow_interrupt": False}
+    cfg = {}
+    with SessionLocal() as db:
+        c = db.query(ConfigModel).filter(ConfigModel.key == "main").first()
+        if c and c.value:
+            cfg = dict(c.value)
+        else:
+            cfg = {"provider": "OpenAI", "base_url": "https://api.openai.com/v1",
+                   "model": "gpt-4o-mini", "api_key": "", "allow_interrupt": False}
 
     mimo_key      = os.getenv("MIMO_API_KEY", "")
     dedicated_key = os.getenv("DEDICATED_MIMO_API_KEY", "")
@@ -66,6 +67,10 @@ def save_config(cfg: dict):
         "api_key":  cfg.get("api_key", ""),
         "allow_interrupt": cfg.get("allow_interrupt", False),
     }
-    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(to_save, f, indent=2)
+    with SessionLocal() as db:
+        c = db.query(ConfigModel).filter(ConfigModel.key == "main").first()
+        if c:
+            c.value = to_save
+        else:
+            db.add(ConfigModel(key="main", value=to_save))
+        db.commit()

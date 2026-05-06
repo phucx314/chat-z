@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: chat-z-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        sync: false # User must set this manually in Render dashboard to their Neon Postgres URL
+      - key: OPENAI_API_KEY
+        sync: false # User must set this manually in Render dashboard

@@ -3,8 +3,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from backend.database import init_db
+
+# Initialize database tables BEFORE importing routers that depend on the DB
+init_db()
+
 from backend.routers import conversations, chat
 
 app = FastAPI(title="AI Chatbot API", version="1.0.0")
@@ -24,6 +27,10 @@ app.include_router(chat.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/ping")
+def ping():
+    return {"status": "alive"}
 
 if __name__ == "__main__":
     import uvicorn

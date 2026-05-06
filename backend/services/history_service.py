@@ -1,9 +1,7 @@
 import os
-import json
 import uuid
 from datetime import datetime
-
-HISTORY_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "history.json")
+from backend.database import SessionLocal, ConversationModel
 
 AVATAR_COLORS = [
     "#4f6ef7", "#e05678", "#25a56a", "#f07d3e",
@@ -11,90 +9,74 @@ AVATAR_COLORS = [
     "#f39c12", "#d35400", "#8e44ad", "#16a085",
 ]
 
-def _load_all() -> list:
-    if not os.path.exists(HISTORY_FILE):
-        return []
-    try:
-        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
-
-def _save_all(conversations: list):
-    os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(conversations, f, ensure_ascii=False, indent=2)
-
 def get_all_conversations() -> list:
-    convs = _load_all()
-    return sorted(convs, key=lambda c: c.get("updated_at", ""), reverse=True)
+    with SessionLocal() as db:
+        convs = db.query(ConversationModel).order_by(ConversationModel.updated_at.desc()).all()
+        return [{"id": c.id, "title": c.title, "avatar_color": c.avatar_color, "messages": c.messages, "created_at": c.created_at.isoformat() if c.created_at else None, "updated_at": c.updated_at.isoformat() if c.updated_at else None} for c in convs]
 
 def get_conversation(conv_id: str) -> dict | None:
-    for c in _load_all():
-        if c["id"] == conv_id:
-            return c
-    return None
+    with SessionLocal() as db:
+        c = db.query(ConversationModel).filter(ConversationModel.id == conv_id).first()
+        if c:
+            return {"id": c.id, "title": c.title, "avatar_color": c.avatar_color, "messages": c.messages, "created_at": c.created_at.isoformat() if c.created_at else None, "updated_at": c.updated_at.isoformat() if c.updated_at else None}
+        return None
 
 def create_conversation(title: str = "New Chat") -> dict:
-    all_convs = _load_all()
-    color = AVATAR_COLORS[len(all_convs) % len(AVATAR_COLORS)]
-    conv = {
-        "id": str(uuid.uuid4()),
-        "title": title,
-        "avatar_color": color,
-        "messages": [],
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
-    }
-    all_convs.append(conv)
-    _save_all(all_convs)
-    return conv
+    with SessionLocal() as db:
+        count = db.query(ConversationModel).count()
+        color = AVATAR_COLORS[count % len(AVATAR_COLORS)]
+        new_conv = ConversationModel(
+            id=str(uuid.uuid4()),
+            title=title,
+            avatar_color=color,
+            messages=[]
+        )
+        db.add(new_conv)
+        db.commit()
+        db.refresh(new_conv)
+        return {"id": new_conv.id, "title": new_conv.title, "avatar_color": new_conv.avatar_color, "messages": new_conv.messages, "created_at": new_conv.created_at.isoformat() if new_conv.created_at else None, "updated_at": new_conv.updated_at.isoformat() if new_conv.updated_at else None}
 
 def update_conversation(conv_id: str, messages: list):
     """Update messages and auto-title from first user message."""
-    all_convs = _load_all()
-    for c in all_convs:
-        if c["id"] == conv_id:
-            c["messages"] = messages
-            c["updated_at"] = datetime.now().isoformat()
+    with SessionLocal() as db:
+        c = db.query(ConversationModel).filter(ConversationModel.id == conv_id).first()
+        if c:
+            # Need to reassign list for JSON column to detect change in SQLAlchemy sometimes
+            c.messages = list(messages)
             first_user = next((m["content"] for m in messages if m["role"] == "user"), None)
-            if first_user and c["title"] == "New Chat":
-                c["title"] = first_user[:40].strip() + ("…" if len(first_user) > 40 else "")
-            break
-    _save_all(all_convs)
+            if first_user and c.title == "New Chat":
+                c.title = first_user[:40].strip() + ("…" if len(first_user) > 40 else "")
+            db.commit()
 
 def rename_conversation(conv_id: str, title: str):
-    all_convs = _load_all()
-    for c in all_convs:
-        if c["id"] == conv_id:
-            c["title"] = title.strip()[:60]
-            c["updated_at"] = datetime.now().isoformat()
-            break
-    _save_all(all_convs)
+    with SessionLocal() as db:
+        c = db.query(ConversationModel).filter(ConversationModel.id == conv_id).first()
+        if c:
+            c.title = title.strip()[:60]
+            db.commit()
 
 def update_avatar_color(conv_id: str, color: str):
-    all_convs = _load_all()
-    for c in all_convs:
-        if c["id"] == conv_id:
-            c["avatar_color"] = color
-            break
-    _save_all(all_convs)
+    with SessionLocal() as db:
+        c = db.query(ConversationModel).filter(ConversationModel.id == conv_id).first()
+        if c:
+            c.avatar_color = color
+            db.commit()
 
 def delete_conversation(conv_id: str):
-    all_convs = [c for c in _load_all() if c["id"] != conv_id]
-    _save_all(all_convs)
+    with SessionLocal() as db:
+        db.query(ConversationModel).filter(ConversationModel.id == conv_id).delete()
+        db.commit()
 
 def delete_message(conv_id: str, message_index: int) -> list | None:
     """Delete a message by index. Returns updated messages list or None if invalid."""
-    all_convs = _load_all()
-    for c in all_convs:
-        if c["id"] == conv_id:
-            msgs = c.get("messages", [])
+    with SessionLocal() as db:
+        c = db.query(ConversationModel).filter(ConversationModel.id == conv_id).first()
+        if c:
+            msgs = list(c.messages)
             if 0 <= message_index < len(msgs):
                 msgs.pop(message_index)
-                c["messages"] = msgs
-                c["updated_at"] = datetime.now().isoformat()
-                _save_all(all_convs)
-                return msgs
-            return None
+                c.messages = msgs
+                db.commit()
+                db.refresh(c)
+                return c.messages
     return None
