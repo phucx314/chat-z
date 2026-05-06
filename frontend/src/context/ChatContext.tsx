@@ -26,7 +26,7 @@ interface ChatActions {
   updateAvatar: (id: string, color: string) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   deleteMessage: (idx: number) => Promise<void>;
-  updateConfig: (data: Record<string, string>) => Promise<void>;
+  updateConfig: (data: Record<string, any>) => Promise<void>;
   refreshConvs: () => Promise<void>;
 }
 
@@ -211,7 +211,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setMessages(res.messages);
   }, [activeId]);
 
-  const updateConfig = useCallback(async (data: Record<string, string>) => {
+  const updateConfig = useCallback(async (data: Record<string, any>) => {
     await api.updateConfig(data);
     const cfg = await api.getConfig();
     setConfig(cfg);
