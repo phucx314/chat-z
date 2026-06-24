@@ -87,12 +87,14 @@ def load_config(user_id: str) -> dict:
     else:
         env_key = openai_key or mimo_key or dedicated_key
 
-    cfg["provider"]     = provider
+    cfg["provider"] = provider
     cfg["_env_api_key"] = env_key
     cfg["_key_from_env"] = bool(env_key)
-    if os.getenv("BASE_URL"):
+
+    # BASE_URL and MODEL from env should seed defaults, not lock the UI forever.
+    if os.getenv("BASE_URL") and not cfg.get("base_url"):
         cfg["base_url"] = os.getenv("BASE_URL")
-    if os.getenv("MODEL"):
+    if os.getenv("MODEL") and not cfg.get("model"):
         cfg["model"] = os.getenv("MODEL")
 
     _ensure_model_matches_provider(cfg)
