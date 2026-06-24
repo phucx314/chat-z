@@ -18,6 +18,10 @@ def generate_reply(messages: list, model: str, api_key: str, base_url: str = Non
 
 import os
 
+
+def _is_deepseek_base_url(base_url: str | None) -> bool:
+    return bool(base_url and "api.deepseek.com" in base_url)
+
 def get_embedding(text: str, api_key: str = None, base_url: str = None) -> list[float]:
     """Get vector embedding for a given text using OpenAI."""
     import os
@@ -25,7 +29,8 @@ def get_embedding(text: str, api_key: str = None, base_url: str = None) -> list[
     
     # List of keys to try in order
     keys_to_try = []
-    if api_key: keys_to_try.append((api_key, base_url))
+    if api_key and not _is_deepseek_base_url(base_url):
+        keys_to_try.append((api_key, base_url))
     
     # Environment fallbacks
     env_keys = [

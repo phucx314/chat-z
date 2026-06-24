@@ -28,6 +28,10 @@ def _is_deepseek_model(model: str) -> bool:
     return model.startswith("deepseek-")
 
 
+def _is_deepseek_provider(provider: str) -> bool:
+    return provider == DEFAULT_PROVIDER
+
+
 def _ensure_model_matches_provider(cfg: dict):
     provider = cfg.get("provider", DEFAULT_PROVIDER)
     preset = PROVIDERS.get(provider)
@@ -53,6 +57,7 @@ def load_config(user_id: str) -> dict:
     mimo_key      = os.getenv("MIMO_API_KEY", "")
     dedicated_key = os.getenv("DEDICATED_MIMO_API_KEY", "")
     openai_key    = os.getenv("OPENAI_API_KEY", "")
+    deepseek_key  = os.getenv("DS_API_KEY", "")
 
     if os.getenv("PROVIDER"):
         provider = os.getenv("PROVIDER")
@@ -71,7 +76,12 @@ def load_config(user_id: str) -> dict:
         cfg["base_url"] = PROVIDERS["MiMo (Pay-As-You-Go)"]["base_url"]
         if not cfg.get("model") or _is_deepseek_model(cfg.get("model", "")):
             cfg["model"] = "mimo-v2.5-pro"
-    elif openai_key: # OpenAI-compatible key, default to DeepSeek in this app
+    elif deepseek_key:
+        provider = DEFAULT_PROVIDER
+        cfg["base_url"] = PROVIDERS[DEFAULT_PROVIDER]["base_url"]
+        if not cfg.get("model") or not _is_deepseek_model(cfg.get("model", "")):
+            cfg["model"] = DEFAULT_MODEL
+    elif openai_key: # OpenAI-compatible fallback if no DS key is set
         provider = DEFAULT_PROVIDER
         cfg["base_url"] = PROVIDERS[DEFAULT_PROVIDER]["base_url"]
         if not cfg.get("model") or not _is_deepseek_model(cfg.get("model", "")):
@@ -84,6 +94,8 @@ def load_config(user_id: str) -> dict:
         env_key = dedicated_key or mimo_key or openai_key
     elif "MiMo" in provider:
         env_key = mimo_key or dedicated_key or openai_key
+    elif _is_deepseek_provider(provider):
+        env_key = deepseek_key or openai_key or mimo_key or dedicated_key
     else:
         env_key = openai_key or mimo_key or dedicated_key
 
