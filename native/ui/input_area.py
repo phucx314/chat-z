@@ -65,11 +65,11 @@ class ChatInputArea(QWidget):
         root.addWidget(hint)
 
     def _refresh_model_btn(self):
-        m = self.config_data.get("model", "gpt-4o-mini")
+        m = self.config_data.get("model", "deepseek-v4-flash")
         self.model_btn.setText(f"⚡ {m} ▾")
 
     def _show_model_menu(self):
-        provider = self.config_data.get("provider", "OpenAI")
+        provider = self.config_data.get("provider", "DeepSeek")
         providers = self.config_data.get("providers", {})
         models = providers.get(provider, {}).get("models", [])
         if not models:

@@ -7,6 +7,37 @@ ENV_FILE    = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__fil
 
 load_dotenv(ENV_FILE, override=False)
 
+DEFAULT_PROVIDER = "DeepSeek"
+DEFAULT_BASE_URL = PROVIDERS[DEFAULT_PROVIDER]["base_url"]
+DEFAULT_MODEL = PROVIDERS[DEFAULT_PROVIDER]["default_model"]
+
+
+def _normalize_provider(cfg: dict) -> str:
+    provider = cfg.get("provider", DEFAULT_PROVIDER)
+    base_url = (cfg.get("base_url") or "").strip()
+    model = (cfg.get("model") or "").strip()
+
+    if provider == "OpenAI" and (
+        "deepseek" in base_url.lower() or model.startswith("deepseek-")
+    ):
+        return DEFAULT_PROVIDER
+    return provider
+
+
+def _is_deepseek_model(model: str) -> bool:
+    return model.startswith("deepseek-")
+
+
+def _ensure_model_matches_provider(cfg: dict):
+    provider = cfg.get("provider", DEFAULT_PROVIDER)
+    preset = PROVIDERS.get(provider)
+    if not preset:
+        return
+
+    model = (cfg.get("model") or "").strip()
+    if model not in preset["models"]:
+        cfg["model"] = preset["default_model"]
+
 def load_config(user_id: str) -> dict:
     cfg = {}
     with SessionLocal() as db:
@@ -14,8 +45,10 @@ def load_config(user_id: str) -> dict:
         if c and c.value:
             cfg = dict(c.value)
         else:
-            cfg = {"provider": "OpenAI", "base_url": "https://api.openai.com/v1",
-                   "model": "gpt-4o-mini", "api_key": "", "allow_interrupt": False}
+            cfg = {"provider": DEFAULT_PROVIDER, "base_url": DEFAULT_BASE_URL,
+                   "model": DEFAULT_MODEL, "api_key": "", "allow_interrupt": False}
+
+    cfg["provider"] = _normalize_provider(cfg)
 
     mimo_key      = os.getenv("MIMO_API_KEY", "")
     dedicated_key = os.getenv("DEDICATED_MIMO_API_KEY", "")
@@ -23,23 +56,28 @@ def load_config(user_id: str) -> dict:
 
     if os.getenv("PROVIDER"):
         provider = os.getenv("PROVIDER")
+        if provider == "OpenAI" and (
+            "deepseek" in os.getenv("BASE_URL", "").lower()
+            or _is_deepseek_model(os.getenv("MODEL", ""))
+        ):
+            provider = DEFAULT_PROVIDER
     elif dedicated_key: # Prioritize MiMo Token Plan
         provider = "MiMo (Token Plan — SG)"
         cfg["base_url"] = PROVIDERS["MiMo (Token Plan — SG)"]["base_url"]
-        if not cfg.get("model") or cfg.get("model", "").startswith("gpt-"):
+        if not cfg.get("model") or _is_deepseek_model(cfg.get("model", "")):
             cfg["model"] = "mimo-v2.5-pro"
     elif mimo_key: # Then MiMo Pay-As-You-Go
         provider = "MiMo (Pay-As-You-Go)"
         cfg["base_url"] = PROVIDERS["MiMo (Pay-As-You-Go)"]["base_url"]
-        if not cfg.get("model") or cfg.get("model", "").startswith("gpt-"):
+        if not cfg.get("model") or _is_deepseek_model(cfg.get("model", "")):
             cfg["model"] = "mimo-v2.5-pro"
-    elif openai_key: # Finally OpenAI
-        provider = "OpenAI"
-        cfg["base_url"] = PROVIDERS["OpenAI"]["base_url"]
-        if not cfg.get("model") or not cfg.get("model", "").startswith("gpt-"):
-            cfg["model"] = "gpt-4o-mini"
+    elif openai_key: # OpenAI-compatible key, default to DeepSeek in this app
+        provider = DEFAULT_PROVIDER
+        cfg["base_url"] = PROVIDERS[DEFAULT_PROVIDER]["base_url"]
+        if not cfg.get("model") or not _is_deepseek_model(cfg.get("model", "")):
+            cfg["model"] = DEFAULT_MODEL
     else:
-        provider = cfg.get("provider", "OpenAI")
+        provider = cfg.get("provider", DEFAULT_PROVIDER)
 
 
     if "Token Plan" in provider:
@@ -56,7 +94,8 @@ def load_config(user_id: str) -> dict:
         cfg["base_url"] = os.getenv("BASE_URL")
     if os.getenv("MODEL"):
         cfg["model"] = os.getenv("MODEL")
-        
+
+    _ensure_model_matches_provider(cfg)
     cfg["allow_interrupt"] = cfg.get("allow_interrupt", False)
     return cfg
 
@@ -64,10 +103,14 @@ def get_effective_api_key(cfg: dict) -> str:
     return cfg.get("_env_api_key") or cfg.get("api_key", "")
 
 def save_config(user_id: str, cfg: dict):
+    normalized_provider = _normalize_provider(cfg)
+    cfg["provider"] = normalized_provider
+    _ensure_model_matches_provider(cfg)
+
     to_save = {
-        "provider": cfg.get("provider", "OpenAI"),
+        "provider": normalized_provider,
         "base_url": cfg.get("base_url", ""),
-        "model":    cfg.get("model", "gpt-4o-mini"),
+        "model":    cfg.get("model", DEFAULT_MODEL),
         "api_key":  cfg.get("api_key", ""),
         "allow_interrupt": cfg.get("allow_interrupt", False),
     }

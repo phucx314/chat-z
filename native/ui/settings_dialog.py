@@ -35,7 +35,7 @@ class SettingsDialog(QDialog):
         root.addWidget(self._section_label("Provider"))
         self.provider_cb = QComboBox()
         self.provider_cb.addItems(list(providers.keys()))
-        self.provider_cb.setCurrentText(self.config_data.get("provider", "OpenAI"))
+        self.provider_cb.setCurrentText(self.config_data.get("provider", "DeepSeek"))
         self.provider_cb.currentTextChanged.connect(self._on_provider_changed)
         root.addWidget(self.provider_cb)
 
@@ -59,7 +59,7 @@ class SettingsDialog(QDialog):
         self.base_input = QLineEdit()
         self.base_input.setText(
             self.config_data.get("base_url") or
-            providers.get(self.config_data.get("provider", "OpenAI"), {}).get("base_url", "")
+            providers.get(self.config_data.get("provider", "DeepSeek"), {}).get("base_url", "")
         )
         root.addWidget(self.base_input)
 

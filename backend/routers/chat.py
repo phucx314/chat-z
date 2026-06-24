@@ -16,8 +16,8 @@ router = APIRouter(tags=["chat"])
 def get_config(user: UserModel = Depends(get_current_user)):
     cfg = load_config(user.id)
     return {
-        "provider":      cfg.get("provider", "OpenAI"),
-        "model":         cfg.get("model", "gpt-4o-mini"),
+        "provider":      cfg.get("provider", "DeepSeek"),
+        "model":         cfg.get("model", "deepseek-v4-flash"),
         "base_url":      cfg.get("base_url", ""),
         "has_key":       bool(get_effective_api_key(cfg)),
         "key_from_env":  cfg.get("_key_from_env", False),
@@ -102,7 +102,7 @@ def send_message(body: SendMessageRequest, user: UserModel = Depends(get_current
     total_chars = sum(len(m['content']) for m in final_prompt_messages)
     print(f"DEBUG: Sending {len(final_prompt_messages)} messages to LLM. Total chars: {total_chars}")
 
-    model    = body.model or cfg.get("model", "gpt-4o-mini")
+    model    = body.model or cfg.get("model", "deepseek-v4-flash")
     base_url = cfg.get("base_url", "").strip() or None
 
     try:

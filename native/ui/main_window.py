@@ -119,7 +119,7 @@ class MainWindow(QMainWindow):
         return px
 
     def _refresh_header_model(self):
-        p = self.config_data.get("provider", "OpenAI").split(" (")[0]
+        p = self.config_data.get("provider", "DeepSeek").split(" (")[0]
         m = self.config_data.get("model", "")
         self.header_model.setText(f"  {p}  ·  {m}  ")
 
